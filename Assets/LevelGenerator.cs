@@ -59,53 +59,6 @@ public class LevelGenerator : MonoBehaviour
         int whileExit = 15000;
         while(frontierCount > 0)
         {
-            GridPoint frontierMain = frontier[Random.Range(0, frontierCount)];
-            List<GridPoint> adjToMain = AdjacentGridPoints(frontierMain.x, frontierMain.y);
-            if (adjToMain.Count <= 0)
-                continue;
-            GridPoint adjToMainPoint = adjToMain[Random.Range(0, adjToMain.Count)];
-            GridPoint inBetweenMainAndAdj = GridPointBetween(frontierMain, adjToMainPoint);
-            adjToMainPoint.type = GridPoint.Type.Tile;
-            inBetweenMainAndAdj.type = GridPoint.Type.Tile;
-            frontier.Remove(frontierMain);
-            frontierCount--;
-            frontier.Remove(adjToMainPoint);
-            if(frontier.Contains(inBetweenMainAndAdj))
-            {
-                frontier.Remove(inBetweenMainAndAdj);
-            }
-            List<GridPoint> toAdd = new();
-            List<GridPoint> First = new();
-            List<GridPoint> Second = new();
-            List<GridPoint> Third = new();
-            First = AdjacentGridPoints(frontierMain.x, frontierMain.y);
-            Second = AdjacentGridPoints(adjToMainPoint.x, adjToMainPoint.y);
-            Third = AdjacentGridPoints(inBetweenMainAndAdj.x, inBetweenMainAndAdj.y);
-            foreach (var item in First)
-            {
-                if(toAdd.Contains(item))
-                {
-                    continue;
-                }
-                toAdd.Add(item);
-            }
-            foreach (var item in Second)
-            {
-                if(toAdd.Contains(item))
-                {
-                    continue;
-                }
-                toAdd.Add(item);    
-            }
-            foreach (var item in Third)
-            {
-                if (toAdd.Contains(item))
-                {
-                    continue;
-                }
-                toAdd.Add(item);
-            }
-            frontier.AddRange(toAdd);
             whileExit--;
             if (whileExit <= 0)
             {
