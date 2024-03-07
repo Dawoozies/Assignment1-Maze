@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
+//Using guide on https://www.roguebasin.com/index.php/Basic_BSP_Dungeon_generation
 public class DungeonGeneration : MonoBehaviour
 {
     public int borderWidth, borderHeight;
@@ -10,6 +11,7 @@ public class DungeonGeneration : MonoBehaviour
     [Serializable]
     public class Dungeon
     {
+        public Color assignedDebugColor;
         public Vector3 center;
         public float width, height;
         public Vector3 size => new Vector3(width, height, 0.1f);
@@ -39,6 +41,20 @@ public class DungeonGeneration : MonoBehaviour
     public List<Dungeon> subDungeons = new();
     void Start()
     {
+        Generate();
+    }
+    public bool generate;
+    void Update()
+    {
+        if (generate)
+        {
+            Generate();
+            generate = false;
+        }
+    }
+    void Generate()
+    {
+        subDungeons = new();
         Dungeon startDungeon = new Dungeon(borderWidth, borderHeight, Vector3.zero);
         subDungeons.Add(startDungeon);
 
@@ -51,7 +67,11 @@ public class DungeonGeneration : MonoBehaviour
                 if(splitDirection > 0.5f)
                 {
                     //Horizontal split --> Pick y value and cut
-                    float horizontalCoordinateSplit = Random.Range(subDungeon.widthBorders.x, subDungeon.widthBorders.y);
+                    float horizontalCoordinateSplit = Random.Range(
+                            subDungeon.widthBorders.x, 
+                            subDungeon.widthBorders.y
+                        );
+
                     Vector3 splitCoordinateBottom = new Vector3(horizontalCoordinateSplit, subDungeon.heightBorders.x, 0f);
                     Vector3 splitCoordinateTop = new Vector3(horizontalCoordinateSplit, subDungeon.heightBorders.y, 0f);
                     //left dungeon corners
@@ -71,16 +91,45 @@ public class DungeonGeneration : MonoBehaviour
                             splitCoordinateTop,
                             subDungeon.topRight
                         );
+                    newSubDungeonList.Add(leftDungeon);
+                    newSubDungeonList.Add(rightDungeon);
                 }
                 else
                 {
                     //Vertical split --> Pick x value and cut
-                    float verticalCoordinateSplit = Random.Range(subDungeon.heightBorders.x, subDungeon.heightBorders.y);
+                    float verticalCoordinateSplit = Random.Range(
+                            subDungeon.heightBorders.x, 
+                            subDungeon.heightBorders.y
+                        );
                     Vector2 splitCoordinateLeft = new Vector2(subDungeon.widthBorders.x, verticalCoordinateSplit);
                     Vector2 splitCoordinateRight = new Vector2(subDungeon.widthBorders.y, verticalCoordinateSplit);
-
+                    //top dungeon corners
+                    //maintained corners are topLeft and topRight
+                    //new corners are bottomLeft and bottomRight
+                    Dungeon topDungeon = new Dungeon(
+                            splitCoordinateLeft,
+                            splitCoordinateRight,
+                            subDungeon.topLeft,
+                            subDungeon.topRight
+                        );
+                    //bottom dungeon corners
+                    //maintained corners are bottomleft and bottomRight
+                    //new corners are topLeft and topRight
+                    Dungeon bottomDungeon = new Dungeon(
+                            subDungeon.bottomLeft,
+                            subDungeon.bottomRight,
+                            splitCoordinateLeft,
+                            splitCoordinateRight
+                        );
+                    newSubDungeonList.Add(topDungeon);
+                    newSubDungeonList.Add(bottomDungeon);
                 }
             }
+            subDungeons = newSubDungeonList;
+        }
+        foreach (var dungeon in subDungeons)
+        {
+            dungeon.assignedDebugColor = new Color(Random.Range(0.1f, 1f), Random.Range(0.1f, 1f), Random.Range(0.1f, 1f), 1f);
         }
     }
     void OnDrawGizmos()
@@ -91,8 +140,8 @@ public class DungeonGeneration : MonoBehaviour
         }
         foreach (Dungeon dungeon in subDungeons)
         {
-            Gizmos.color = new Color(Random.Range(0.1f,1f), Random.Range(0.1f, 1f), Random.Range(0.1f, 1f), 1f);
-            Gizmos.DrawCube(dungeon.center, dungeon.size);
+            Gizmos.color = dungeon.assignedDebugColor;
+            Gizmos.DrawCube(new Vector3(dungeon.center.x, 0f, dungeon.center.y), new Vector3(dungeon.size.x, 0.1f, dungeon.size.y));
         }
     }
 }
