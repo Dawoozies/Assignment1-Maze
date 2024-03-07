@@ -385,10 +385,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95021913061c4be4791eeb958d410345, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  borderWidth: 20
-  borderHeight: 20
+  borderWidth: 400
+  borderHeight: 400
+  roomWidth: 0
+  roomHeight: 0
   subdivisions: 2
-  minSizeBuffer: 1
   subDungeons: []
   generate: 0
 --- !u!1660057539 &9223372036854775807

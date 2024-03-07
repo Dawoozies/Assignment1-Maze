@@ -7,6 +7,7 @@ using Random = UnityEngine.Random;
 public class DungeonGeneration : MonoBehaviour
 {
     public int borderWidth, borderHeight;
+    public int roomWidth, roomHeight;
     public int subdivisions;
     [Serializable]
     public class Dungeon
