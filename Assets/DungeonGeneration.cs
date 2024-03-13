@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 //Using guide on https://www.roguebasin.com/index.php/Basic_BSP_Dungeon_generation
@@ -34,6 +33,8 @@ public class DungeonGeneration : MonoBehaviour
         public Vector2 topLeft => new Vector2(widthBorders.x, heightBorders.y);
         public Vector2 topRight => new Vector2(widthBorders.y, heightBorders.y);
         public int depth;
+        public int noSisterMidGenCheck;
+        public bool hasSister;
         public Dungeon(float width, float height, Vector3 center)
         {
             this.width = width;
@@ -63,18 +64,12 @@ public class DungeonGeneration : MonoBehaviour
     public List<Dungeon> subDungeons = new();
     Dictionary<Dungeon, List<Dungeon>> dungeonChildrenMap = new();
     Dictionary<int, List<Dungeon>> dungeonDepthMap = new();
+    Dictionary<Dungeon, Dungeon> sisterMap = new();
     void Start()
     {
-        Generate();
     }
-    public bool generate;
     void Update()
     {
-        if (generate)
-        {
-            Generate();
-            generate = false;
-        }
         if(debugType == DebugType.AnimateDepth)
         {
             if(depthAnimateTimer < depthAnimateTime)
@@ -89,11 +84,12 @@ public class DungeonGeneration : MonoBehaviour
             }
         }
     }
-    void Generate()
+    public List<Dungeon> Generate()
     {
         subDungeons = new();
         dungeonChildrenMap = new();
         dungeonDepthMap = new();
+        sisterMap = new();
         Dungeon startDungeon = new Dungeon(borderWidth, borderHeight, Vector3.zero);
         startDungeon.depth = 0;
         subDungeons.Add(startDungeon);
@@ -187,9 +183,16 @@ public class DungeonGeneration : MonoBehaviour
             subDungeons = newSubDungeonList;
             foreach (Dungeon dungeon in subDungeons)
             {
-                dungeon.assignedDebugColor = new Color(Random.Range(0.1f, 1f), Random.Range(0.1f, 1f), Random.Range(0.1f, 1f),1f);
+                dungeon.assignedDebugColor = new Color(Random.Range(0.1f, 1f), Random.Range(0.1f, 1f), Random.Range(0.1f, 1f),0.75f);
             }
         }
+        foreach (var item in dungeonChildrenMap)
+        {
+            //Debug.LogError($"Parent Depth = {item.Key.depth} Children ({item.Value[0].depth} valid = {item.Value[0].ValidSize(roomWidth, roomHeight)}, {item.Value[1].depth} valid = {item.Value[1].ValidSize(roomWidth, roomHeight)})");
+            List<Dungeon> children = item.Value;
+            SetSisters(children[0], children[1]);
+        }
+        return subDungeons;
     }
     void SetChildren(Dungeon dungeon, List<Dungeon> children)
     {
@@ -201,6 +204,10 @@ public class DungeonGeneration : MonoBehaviour
         {
             dungeonChildrenMap.Add(dungeon, children);
         }
+    }
+    void SetSisters(Dungeon sisterA, Dungeon sisterB)
+    {
+        sisterMap.TryAdd(sisterA, sisterB);
     }
     void UpdateDepthMap(Dungeon dungeon)
     {
@@ -229,7 +236,7 @@ public class DungeonGeneration : MonoBehaviour
                     for (int i = 0; i < dungeonsAtDepth.Count; i++)
                     {
                         Color gizmoColor = depthColor / (i + 1);
-                        gizmoColor.a = 1f;
+                        gizmoColor.a = 0.75f;
                         Gizmos.color = gizmoColor;
                         Dungeon dungeon = dungeonsAtDepth[i];
                         Gizmos.DrawCube(new Vector3(dungeon.center.x, 0f, dungeon.center.y), new Vector3(dungeon.size.x, 0.1f, dungeon.size.y));
@@ -244,6 +251,29 @@ public class DungeonGeneration : MonoBehaviour
                 Gizmos.color = dungeon.assignedDebugColor;
                 Gizmos.DrawCube(new Vector3(dungeon.center.x, 0f, dungeon.center.y), new Vector3(dungeon.size.x, 0.1f, dungeon.size.y));
             }
+        }
+    }
+    public Dungeon GetSister(Dungeon dungeon)
+    {
+        if(!sisterMap.ContainsKey(dungeon))
+        {
+            return null;
+        }
+        return sisterMap[dungeon];
+    }
+    public void CheckIfNoSister(List<Dungeon> children)
+    {
+        bool childZeroValidCheck = children[0].ValidSize(roomWidth, roomHeight);
+        bool childOneValidCheck = children[1].ValidSize(roomWidth, roomHeight);
+        if(childZeroValidCheck && !childOneValidCheck)
+        {
+            //then child zero will have no sister
+            children[0].noSisterMidGenCheck = 1;
+        }
+        if(!childZeroValidCheck && childOneValidCheck)
+        {
+            //then child one will have no sister
+            children[1].noSisterMidGenCheck = 1;
         }
     }
 }
